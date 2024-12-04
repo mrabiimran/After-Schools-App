@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lessons App</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.16"></script>
+</head>
+<body>
+    <div id="app" class="container py-5">
+        <header class="header mb-4">
+            <h1>Lesson Booking App</h1>
+        </header>
+        <main>
+            <!-- Lessons Section -->
+            <section v-if="!showCheckout" class="mb-4">
+              
+                <h2 class="mb-4">All Lessons</h2>
+                <div class="row">
+                    <div v-for="lesson in sortedLessons" :key="lesson.id" class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                        <div class="card lesson-item">
+                            <img :src="lesson.image || 'https://via.placeholder.com/100'" class="card-img-top" alt="Lesson Icon">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ lesson.subject }}</h5>
+                                <p class="card-text">Location: {{ lesson.location }}</p>
+                                <p class="card-text">Price: ${{ lesson.price }}</p>
+                                <p class="card-text">Spaces: {{ lesson.spaces }}</p>
+                                <button class="btn btn-primary w-100" :disabled="lesson.spaces === 0" @click="addToCart(lesson)">
+                                    Add to Cart
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Checkout Section -->
+            <section v-if="showCheckout" class="checkout-page">
+                <div class="bg-white p-4 rounded shadow">
+                    <h2>Checkout</h2>
+                    <button class="btn btn-secondary mb-3" @click="showCheckout = false">Go back to go Lessons</button>
+                    <div v-if="cart.length > 0">
+                        <h3 style="text-align: center; margin-bottom: 50px;">Cart Items:</h3>
+                        <ul class="list-group mb-3">
+                            <li v-for="(item, index) in cart" :key="index" class="list-group-item d-flex justify-content-between align-items-center">
+                                <img :src="item.image" alt="Lesson Icon" width="50" class="me-2">
+                               <span> <strong>Lesson:</strong> {{ item.subject }} </span><br/> <span><strong>Price:</strong> ${{ item.price }}</span> <span> <strong>Quantity</strong> {{ item.quantity }}</span>
+                                                               <button class="btn btn-danger btn-sm" @click="removeFromCart(index)">Remove</button>
+                            </li>
+                        </ul>
+                        <div class="mb-3">
+                            <h4>Total: ${{ cartTotal }}</h4>
+                        </div>
+                        <form @submit.prevent="checkout">
+                            <input 
+                                type="text" 
+                                class="form-control mb-3" 
+                                v-model="formData.fullName" 
+                                placeholder="Full Name" 
+                                required 
+                                pattern="[a-zA-Z\s]+" 
+                                title="Please enter a valid name (letters and spaces only)"
+                            >
+                            <input 
+                                type="email" 
+                                class="form-control mb-3" 
+                                v-model="formData.email" 
+                                placeholder="Email" 
+                                required 
+                                title="Please enter a valid email address"
+                            >
+                            <input 
+                                type="tel" 
+                                class="form-control mb-3" 
+                                v-model="formData.phone" 
+                                placeholder="Phone" 
+                                required 
+                                pattern="\d+" 
+                                title="Please enter a valid phone number"
+                            >
+                            <input 
+                                type="text" 
+                                class="form-control mb-3" 
+                                v-model="formData.address" 
+                                placeholder="Address" 
+                                required 
+                            >
+                            <input 
+                                type="text" 
+                                class="form-control mb-3" 
+                                v-model="formData.zipCode" 
+                                placeholder="Zip Code" 
+                                required 
+                                pattern="\d+" 
+                                title="Please enter a valid zip code"
+                            >
+                            <button class="btn btn-success w-100" :disabled="!isCheckoutValid">Checkout</button>
+                        </form>
+                    </div>
+                    <div v-else>
+                        <p>Your cart is empty.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                lessons: [
+                    { id: 1, subject: 'Cooking', location: 'Dubai', price: 25, spaces: 5, image: 'images/cooking.jpg' },
+                    { id: 2, subject: 'Cricket', location: 'London', price: 50, spaces: 5, image: 'images/cricket.jpg' },
+                    { id: 3, subject: 'Football', location: 'Madrid', price: 75, spaces: 5, image: 'images/football1.png' },
+                    { id: 4, subject: 'Drama', location: 'Tokyo', price: 100, spaces: 5, image: 'images/drama.jpg' },
+                    { id: 5, subject: 'Gardening', location: 'Istanbul', price: 125, spaces: 5, image: 'images/gardening1.jpg' },
+                    { id: 6, subject: 'Golf', location: 'Abu Dhabi', price: 150, spaces: 5, image: 'images/golf.jpg' },
+                    { id: 7, subject: 'Yoga', location: 'New York', price: 175, spaces: 5, image: 'images/yoga.jpg' },
+                    { id: 8, subject: 'Stem', location: 'Rome', price: 200, spaces: 5, image: 'images/stem.png' },
+                    { id: 9, subject: 'Horse Riding', location: 'Melbourne', price: 225, spaces: 5, image: 'images/horseriding.jpg' },
+                    { id: 10, subject: 'Dance', location: 'Singapur', price: 250, spaces: 5, image: 'images/dance.jpg' },
+                ],
+                sortAttribute: 'subject',
+                sortOrder: 'asc',
+                searchQuery: '',
+                cart: [],
+                showCheckout: false,
+                formData: {
+                    fullName: '',
+                    email: '',
+                    phone: '',
+                    address: '',
+                    zipCode: ''
+                },
+            },
+            computed: {
+                filteredLessons() {
+                    const query = this.searchQuery.toLowerCase();
+                    return this.lessons.filter(lesson =>
+                        lesson.subject.toLowerCase().startsWith(query) ||
+                        lesson.location.toLowerCase().startsWith(query)
+                    );
+                },
+                sortedLessons() {
+                    return this.filteredLessons.sort((a, b) => {
+                        const valA = a[this.sortAttribute];
+                        const valB = b[this.sortAttribute];
+                        if (typeof valA === 'number' && typeof valB === 'number') {
+                            return this.sortOrder === 'asc' ? valA - valB : valB - valA;
+                        }
+                        return this.sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                    });
+                },
+                cartTotal() {
+                    return this.cart.reduce((total, item) => total + item.price * item.quantity, 0);
+                },
+                isCheckoutValid() {
+                    const { fullName, email, phone, address, zipCode } = this.formData;
+                    return fullName && email && phone && address && zipCode;
+                }
+            },
+            methods: {
+                toggleSortOrder() {
+                    this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+                },
+                addToCart(lesson) {
+                    if (lesson.spaces > 0) {
+                        const cartItem = this.cart.find(item => item.id === lesson.id);
+                        if (cartItem) {
+                            cartItem.quantity++;
+                        } else {
+                            this.cart.push({ ...lesson, quantity: 1 });
+                        }
+                        lesson.spaces--;
+                    }
+                },
+                removeFromCart(index) {
+                    const item = this.cart[index];
+                    item.spaces += item.quantity;
+                    this.cart.splice(index, 1);
+                },
+                checkout() {
+                    alert('Checkout successful!');
+                    this.cart = [];
+                    this.showCheckout = false;
+                    this.formData = {
+                        fullName: '',
+                        email: '',
+                        phone: '',
+                        address: '',
+                        zipCode: ''
+                    };
+                }
+            }
+        });
+    </script>
+</body>
+</html>
