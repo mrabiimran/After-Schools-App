@@ -21,7 +21,15 @@
                     <div class="col-md-8">
                         <input type="text" class="form-control" v-model="searchQuery" placeholder="Search lessons...">
                     </div>
-                   
+                    <div class="col-md-4 d-flex align-items-center gap-2">
+                        <select class="form-select" v-model="sortAttribute">
+                            <option value="subject">Subject</option>
+                            <option value="location">Location</option>
+                            <option value="price">Price</option>
+                            <option value="spaces">Spaces</option>
+                        </select>
+                       
+                    </div>
                 </div>
                 <h2 class="mb-4">All Lessons</h2>
                 <div class="row">
